@@ -1,0 +1,95 @@
+# clothify_app.py
+# Simple Clothing E-Commerce (Flask, works in Pydroid 3)
+
+from flask import Flask, render_template_string, request
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
+
+app = Flask(__name__)
+
+# ---------- CONFIG ----------
+EMAIL_ADDRESS = "abdulrehman90654@gmail.com"
+EMAIL_PASSWORD = "osph xeur bnls imjv"
+JAZZCASH_NUMBER = "03038603624"
+# ----------------------------
+
+# --- PRODUCT LIST ---
+products = [
+    {"id": 1, "name": "Casual Shirt", "price": 5500, "img": "shirt1.jpg"},
+    {"id": 2, "name": "Denim Jeans", "price": 8200, "img": "jeans1.jpg"},
+    {"id": 3, "name": "Classic Kurta", "price": 7300, "img": "kurta1.jpg"},
+    {"id": 4, "name": "Hoodie", "price": 9500, "img": "hoodie1.jpg"},
+    {"id": 5, "name": "Formal Pants", "price": 8700, "img": "pants1.jpg"},
+    {"id": 6, "name": "Jacket", "price": 12000, "img": "jacket1.jpg"},
+    {"id": 7, "name": "T-Shirt", "price": 5000, "img": "tshirt1.jpg"},
+    {"id": 8, "name": "Sweater", "price": 6400, "img": "sweater1.jpg"},
+]
+
+# --- HTML TEMPLATE ---
+html = """
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Clothify Store</title>
+  <style>
+    body {font-family: Arial; background:#fafafa; text-align:center;}
+    h1 {color:#333;}
+    .product {display:inline-block; border:1px solid #ccc; border-radius:10px;
+              margin:10px; padding:10px; width:180px; background:white;}
+    img {width:150px; height:150px; border-radius:8px;}
+    button {background:#4CAF50; color:white; border:none; padding:8px 14px;
+            border-radius:5px; cursor:pointer;}
+    button:hover {background:#45a049;}
+  </style>
+</head>
+<body>
+  <h1>🛍️ Clothify Store</h1>
+  <p>Pay easily via JazzCash: <b>{{ jazzcash }}</b></p>
+  <hr>
+
+  {% for p in products %}
+    <div class="product">
+      <img src="{{ url_for('static', filename=p.img) }}" alt="{{ p.name }}">
+      <h3>{{ p.name }}</h3>
+      <p>Price: PKR {{ p.price }}</p>
+      <form action="/buy" method="post">
+        <input type="hidden" name="product" value="{{ p.name }}">
+        <button type="submit">Buy</button>
+      </form>
+    </div>
+  {% endfor %}
+</body>
+</html>
+"""
+
+# --- ROUTES ---
+@app.route("/")
+def home():
+    return render_template_string(html, products=products, jazzcash=JAZZCASH_NUMBER)
+
+@app.route("/buy", methods=["POST"])
+def buy():
+    product = request.form["product"]
+    send_email(product)
+    return f"<h2>Thank you for purchasing {product}!<br>We'll contact you soon.</h2>"
+
+# --- EMAIL FUNCTION ---
+def send_email(product):
+    try:
+        msg = MIMEText(f"New order: {product}\nTime: {datetime.now()}")
+        msg["Subject"] = "New Order Notification"
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = EMAIL_ADDRESS
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print("Email failed:", e)
+
+# --- RUN APP ---
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
